@@ -1,0 +1,15 @@
+from wicked_expressions:api import Scoreboard
+from crankshaft:api import Event, Entrypoint
+from crankshaft:events import on_player_tick
+
+
+def handler(event):
+    break_tnt = Scoreboard('unstable_tnt.broken_tnt', 'mined:tnt')['@s']
+
+    if break_tnt >= 1:
+        break_tnt = 0
+        event.trigger()
+
+
+on_break_tnt = Event('on_break_tnt')
+on_break_tnt.attach_handler(handler, on_player_tick, Entrypoint.EVENT)

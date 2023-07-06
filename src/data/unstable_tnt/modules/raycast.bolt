@@ -1,0 +1,22 @@
+from wicked_expressions:api import StaticVar, Bool
+from contextlib import contextmanager
+
+
+stop = StaticVar(Bool)
+
+
+def stop_raycast():
+    global stop
+
+    stop = True
+
+@contextmanager
+def raycast(range, step):
+    global stop
+    path = ~/raycast
+    stop = False
+
+    positioned ^ ^ ^ function path:
+        yield
+        if not stop:
+            if entity @s[distance=(None, range)] positioned ^ ^ ^step run function path

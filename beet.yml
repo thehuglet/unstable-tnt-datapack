@@ -1,0 +1,24 @@
+output: dist
+
+data_pack:
+  zipped: true
+  load:
+  - src
+
+resource_pack:
+  load:
+  - src
+
+require:
+- bolt
+- wicked_expressions
+- lightning_rod
+- crankshaft
+
+pipeline:
+- mecha
+
+meta:
+  bolt:
+    entrypoint: '*:main'
+
