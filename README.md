@@ -17,3 +17,7 @@ You can defuse the Unstable TNT safely by breaking it with Shears.
 1. Install Python 3
 2. Install pip requirements `pip install -r requirements.txt`
 3. Build the datapack using beet `beet`
+
+---
+
+License - [MIT](LICENSE)
