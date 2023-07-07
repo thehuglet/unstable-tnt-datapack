@@ -1,13 +1,13 @@
 output: dist
 
 data_pack:
+  name: "Unstable TNT"
   zipped: true
+  pack_format: 15
+  description: Adds Unstable TNT to survival Minecraft. By arcticyeti1
   load:
-  - src
-
-resource_pack:
-  load:
-  - src
+    data: src/data
+    pack.png: resources/pack.png
 
 require:
 - bolt
