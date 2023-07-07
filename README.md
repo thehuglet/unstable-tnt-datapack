@@ -1,6 +1,6 @@
 # Unstable TNT Datapack
 
-Adds Unstable TNT to survival Minecraft.
+> Adds Unstable TNT to survival Minecraft.
 
 Unstable TNT triggers when a player tries to break it.
 
