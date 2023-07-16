@@ -1,2 +1,2 @@
-from ./events/on_place_tripwire_hook import on_place_tripwire_hook
+from ./events/on_place_tripwire_on_normal_tnt import on_place_tripwire_on_normal_tnt
 from ./events/on_break_tnt import on_break_tnt

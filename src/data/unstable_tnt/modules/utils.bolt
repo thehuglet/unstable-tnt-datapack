@@ -1,13 +1,9 @@
+from lightning_rod:api import raw_cmd
 from mecha import Mecha
 from nbtlib import List, String
 
-
-mc = ctx.inject(Mecha)
-
-
-def selector(value):
-    return mc.parse(value, using="selector")
-
+def mc_return(output=0):
+    return raw_cmd(f"return {output}")
 
 # summon override to allow nesting
 _SUMMON_INIT_TAG = f"{ctx.project_id}.summon.init"

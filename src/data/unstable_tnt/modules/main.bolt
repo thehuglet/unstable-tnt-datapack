@@ -1,92 +1,98 @@
-from wicked_expressions:api import StaticVar, Bool, this, List, Double, Data, Int
+from contextlib import contextmanager
 from crankshaft:api import Listener
-from lightning_rod:api import random, get_gametime
-from crankshaft:flags import is_sneaking
 from crankshaft:events import on_tick
-from ./events import on_place_tripwire_hook, on_break_tnt
+from crankshaft:flags import is_sneaking
+from lightning_rod:api import random, get_gametime
+from wicked_expressions:api import Data, StaticVar, Var, String, Bool, List, Double, this
+from ./events import on_place_tripwire_on_normal_tnt, on_break_tnt
 from ./raycast import raycast, stop_raycast
-from ./utils import selector, summon
+from ./utils import mc_return, summon
 
+AIR_TOGGLED_ENTITY = 'unstable_tnt.air_toggled'
 
-def tnt_block_found(tripwire_marker, is_tiledrops_enabled):
-    gamerule doTileDrops false
-
-    # playsound minecraft:block.sand.hit master @a ~ ~ ~ 1 1
-    # playsound minecraft:block.sand.place master @a ~ ~ ~ 1 1
-    # playsound minecraft:block.sand.break master @a ~ ~ ~ 1 1
+def place_unstable_tnt():
     playsound minecraft:item.spyglass.use master @a ~ ~ ~ 1 0
     playsound minecraft:item.spyglass.use master @a ~ ~ ~ 1 0.25
     playsound minecraft:item.spyglass.use master @a ~ ~ ~ 1 0.50
 
     setblock ~ ~ ~ tnt[unstable=true]
 
-    at tripwire_marker:
-        setblock ~ ~ ~ air destroy
+@contextmanager
+def block_drops_disabled():
+    is_tiledrops_enabled = StaticVar(Bool)
+    with is_tiledrops_enabled.store():
+        gamerule doTileDrops
+
+    gamerule doTileDrops false
+
+    yield
 
     if is_tiledrops_enabled:
         gamerule doTileDrops true
 
+def get_tripwire_facing_direction():
+    output = Var(String)
+    
+    for direction in ['north', 'west', 'south', 'east']:
+        if block ~ ~ ~ tripwire_hook[facing=direction]:
+            output = direction
+
+    return output
+
+def create_vanilla_tnt_drop():
+    summon item ~ ~0.5 ~ {Item: {id: 'minecraft:tnt', Count: 1b}, Tags: [AIR_TOGGLED_ENTITY], Motion: [0.0d, 0.2d, 0.0d]}:
+        new_motion = StaticVar(List)
+        new_motion = [Double(0.0), Double(0.0), Double(0.0)]
+        vertical_motion = 0.2
+        max_horizontal_motion = 1000
+        new_motion[0] = (Data.cast(random(-max_horizontal_motion, max_horizontal_motion) / 10000, 'double'))
+        new_motion[1] = (Double(vertical_motion))
+        new_motion[2] = (Data.cast(random(-max_horizontal_motion, max_horizontal_motion) / 10000, 'double'))
+
+        this.Motion = new_motion
+
+@Listener(on_tick)
+def _():
+    as @e[type=item, tag=AIR_TOGGLED_ENTITY]:
+        this.Air = get_gametime()
+
+@Listener(on_place_tripwire_on_normal_tnt)
+def _():
+    if is_sneaking:
+        mc_return()
+
+    anchored eyes:
+        with raycast(6, 0.001):
+            if block ~ ~ ~ minecraft:tripwire_hook align xyz positioned ~0.5 ~ ~0.5:
+                stop_raycast()
+
+                tripwire_facing = get_tripwire_facing_direction()
+
+                # destroys the tripwire
+                with block_drops_disabled():
+                    setblock ~ ~ ~ air destroy
+
+                if tripwire_facing == 'north':
+                    positioned ~ ~ ~1:
+                        place_unstable_tnt()
+                elif tripwire_facing == 'west':
+                    positioned ~1 ~ ~:
+                        place_unstable_tnt()
+                elif tripwire_facing == 'south':
+                    positioned ~ ~ ~-1:
+                        place_unstable_tnt()
+                elif tripwire_facing == 'east':
+                    positioned ~-1 ~ ~:
+                        place_unstable_tnt()
 
 @Listener(on_break_tnt)
 def _():
-    if data entity @s {"SelectedItem":{"id": "minecraft:shears"}}:
-        as @e[type=tnt, distance=..7.0, nbt={Fuse:80s},limit=1, sort=nearest] at @s:
-            as @a[distance=..15.0]:
-                stopsound @s * minecraft:entity.tnt.primed
+    unless data entity @s {"SelectedItem":{"id": "minecraft:shears"}}:
+        mc_return()
 
-            summon item ~ ~0.5 ~ {Item:{id: 'minecraft:tnt', Count: 1b}}:
-                new_motion = StaticVar(List)
+    as @e[type=tnt, distance=..7.0, nbt={Fuse: 80s}, limit=1, sort=nearest] at @s:
+        as @a[distance=..24.0]:
+            stopsound @s * minecraft:entity.tnt.primed
 
-                new_motion = [Double(0.0), Double(0.0), Double(0.0)]
-
-                v = 0.2
-                h = 1000
-
-                new_motion[0] = (Data.cast(random(-h, h) / 10000, 'double'))
-                new_motion[1] = (Double(v))
-                new_motion[2] = (Data.cast(random(-h, h) / 10000, 'double'))
-                this.Motion = new_motion
-
-            kill @s
-
-# debug
-@Listener(on_tick)
-def _():
-    # defused tnt item drop air toggling
-    as @e[type=item,nbt={Item: {id: 'minecraft:tnt', Count: 1b}}]:
-        this.Air = get_gametime()
-
-
-@Listener(on_place_tripwire_hook)
-def _():
-    tripwire_marker = selector('@e[type=marker, tag=unstable_tnt.tripwire_marker]')
-    is_tiledrops_enabled = StaticVar(Bool)
-
-    with is_tiledrops_enabled.store():
-        gamerule doTileDrops
-
-    anchored eyes:
-        if not is_sneaking:
-            with raycast(6, 0.05):
-                unless entity tripwire_marker if block ~ ~ ~ tripwire_hook align xyz:
-                    summon marker ~0.5 ~ ~0.5 {Tags: [unstable_tnt.tripwire_marker]}
-
-                if block ~ ~ ~ tnt[unstable=false] align xyz positioned ~0.5 ~ ~0.5:
-                    if entity @e[type=marker, tag=unstable_tnt.tripwire_marker, distance=..1.25]:
-                        connected_tripwire_count = StaticVar(Int)
-                        connected_tripwire_count = 0
-
-                        if block ~ ~ ~-1 tripwire_hook[facing=north]:
-                            connected_tripwire_count += 1
-                        if block ~-1 ~ ~ tripwire_hook[facing=west]:
-                            connected_tripwire_count += 1
-                        if block ~ ~ ~1 tripwire_hook[facing=south]:
-                            connected_tripwire_count += 1
-                        if block ~1 ~ ~ tripwire_hook[facing=east]:
-                            connected_tripwire_count += 1
-                        
-                        if connected_tripwire_count > 0:
-                            tnt_block_found(tripwire_marker, is_tiledrops_enabled)
-                            stop_raycast()
-
-            kill tripwire_marker
+        create_vanilla_tnt_drop()
+        kill @s

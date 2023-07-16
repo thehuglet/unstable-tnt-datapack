@@ -1,6 +1,7 @@
 from wicked_expressions:api import StaticVar, Bool
 from contextlib import contextmanager
 
+# TODO: replace this with a proper raycasting library at some point
 
 stop = StaticVar(Bool)
 

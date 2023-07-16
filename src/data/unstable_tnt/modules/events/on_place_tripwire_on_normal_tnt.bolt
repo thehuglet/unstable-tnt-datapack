@@ -1,0 +1,138 @@
+from lightning_rod:api import revoke_advancement
+from crankshaft:api import Event
+
+def handler(event):
+    advancement_path = event.path('advancement')
+    reward_path = event.path('advancement_reward')
+
+    # thanks Coppertine
+    advancement advancement_path {
+        "criteria": {
+            "tripwire_tnt": {
+                "trigger": "minecraft:placed_block",
+                "conditions": {
+                    "location": [
+                        {
+                            "condition": "minecraft:any_of",
+                            "terms": [
+                                {
+                                    "condition": "minecraft:all_of",
+                                    "terms": [
+                                        {
+                                            "condition": "minecraft:block_state_property",
+                                            "block": "minecraft:tripwire_hook",
+                                            "properties": {
+                                                "facing": "north"
+                                            }
+                                        },
+                                        {
+                                            "condition": "minecraft:location_check",
+                                            "offsetZ": 1,
+                                            "predicate": {
+                                                "block": {
+                                                    "blocks": [
+                                                        "minecraft:tnt"
+                                                    ],
+                                                    "state": {
+                                                        "unstable": false
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition": "minecraft:all_of",
+                                    "terms": [
+                                        {
+                                            "condition": "minecraft:block_state_property",
+                                            "block": "minecraft:tripwire_hook",
+                                            "properties": {
+                                                "facing": "south"
+                                            }
+                                        },
+                                        {
+                                            "condition": "minecraft:location_check",
+                                            "offsetZ": -1,
+                                            "predicate": {
+                                                "block": {
+                                                    "blocks": [
+                                                        "minecraft:tnt"
+                                                    ],
+                                                    "state": {
+                                                        "unstable": false
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition": "minecraft:all_of",
+                                    "terms": [
+                                        {
+                                            "condition": "minecraft:block_state_property",
+                                            "block": "minecraft:tripwire_hook",
+                                            "properties": {
+                                                "facing": "west"
+                                            }
+                                        },
+                                        {
+                                            "condition": "minecraft:location_check",
+                                            "offsetX": 1,
+                                            "predicate": {
+                                                "block": {
+                                                    "blocks": [
+                                                        "minecraft:tnt"
+                                                    ],
+                                                    "state": {
+                                                        "unstable": false
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "condition": "minecraft:all_of",
+                                    "terms": [
+                                        {
+                                            "condition": "minecraft:block_state_property",
+                                            "block": "minecraft:tripwire_hook",
+                                            "properties": {
+                                                "facing": "east"
+                                            }
+                                        },
+                                        {
+                                            "condition": "minecraft:location_check",
+                                            "offsetX": -1,
+                                            "predicate": {
+                                                "block": {
+                                                    "blocks": [
+                                                        "minecraft:tnt"
+                                                    ],
+                                                    "state": {
+                                                        "unstable": false
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+        "rewards": {
+            "function": reward_path
+        }
+    }
+
+    function reward_path:
+        revoke_advancement(advancement_path)
+        event.trigger()
+
+on_place_tripwire_on_normal_tnt = Event('on_place_tripwire_on_normal_tnt')
+on_place_tripwire_on_normal_tnt.attach_handler(handler)
